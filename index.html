@@ -16,8 +16,9 @@
     --border:rgba(255,255,255,0.10);
     --gold:#e7b96d;
     --mint:#7fd1a4;
+    --lilac:#b9a3e3;
     --text:#f2ede4;
-    --text-dim:#4f4d54;
+    --text-dim:#b9b3c9;
     --radius:18px;
   }
 
@@ -51,6 +52,9 @@
   .firefly:nth-child(3){left:45%; top:85%; animation-delay:6s;}
   .firefly:nth-child(4){left:65%; top:55%; animation-delay:9s; background:var(--mint); box-shadow:0 0 8px 2px rgba(127,209,164,0.5);}
   .firefly:nth-child(5){left:20%; top:30%; animation-delay:12s;}
+  .firefly:nth-child(6){left:90%; top:75%; animation-delay:2s; background:var(--lilac); box-shadow:0 0 8px 2px rgba(185,163,227,0.5);}
+  .firefly:nth-child(7){left:30%; top:12%; animation-delay:8s; background:var(--lilac); box-shadow:0 0 8px 2px rgba(185,163,227,0.5);}
+  .firefly:nth-child(8){left:55%; top:40%; animation-delay:14s;}
 
   @keyframes drift{
     0%{opacity:0; transform:translate(0,0) scale(0.8);}
@@ -226,7 +230,7 @@
     margin-top:2px;
     text-align:right;
     color:var(--text-dim);
-    opacity:0.9;
+    opacity:0.75;
     animation:pop .25s ease;
   }
 
@@ -366,21 +370,22 @@
     outline:none;
     transition:border-color .2s ease, background .2s ease;
   }
-  #textInput:focus{border-color:var(--mint); background:rgba(255,255,255,0.08);}
+  #textInput:focus{border-color:var(--lilac); background:rgba(255,255,255,0.08);}
   #sendBtn{
     width:46px; height:46px;
     border-radius:14px;
     border:none;
-    background:linear-gradient(135deg, var(--mint), #5fb587);
-    color:#0f2018;
+    background:linear-gradient(135deg, var(--lilac), #8f76c9);
+    color:#1c1730;
     cursor:pointer;
     display:flex; align-items:center; justify-content:center;
     transition:transform .15s ease, box-shadow .15s ease;
     flex-shrink:0;
   }
-  #sendBtn:hover{transform:translateY(-1px) scale(1.03); box-shadow:0 8px 18px rgba(127,209,164,0.3);}
+  #sendBtn:hover{transform:translateY(-1px) scale(1.03); box-shadow:0 8px 18px rgba(185,163,227,0.35);}
   #sendBtn:active{transform:translateY(0) scale(0.97);}
-  #sendBtn:focus-visible, #textInput:focus-visible{outline:2px solid var(--mint); outline-offset:2px;}
+  #sendBtn:focus-visible{outline:2px solid var(--lilac); outline-offset:2px;}
+  #textInput:focus-visible{outline:2px solid var(--lilac); outline-offset:2px;}
 
   .empty-state{
     margin:auto;
@@ -407,6 +412,9 @@
 <body>
 
 <div class="fireflies">
+  <div class="firefly"></div>
+  <div class="firefly"></div>
+  <div class="firefly"></div>
   <div class="firefly"></div>
   <div class="firefly"></div>
   <div class="firefly"></div>
