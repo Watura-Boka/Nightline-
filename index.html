@@ -419,6 +419,14 @@
     margin-bottom:6px;
   }
 
+  /* ---------- emoji-only messages render larger ---------- */
+  .bubble .msg-text.emoji-only{
+    line-height:1.2;
+  }
+  .bubble .msg-text.emoji-size-lg{ font-size:2.6em; }
+  .bubble .msg-text.emoji-size-md{ font-size:2em; }
+  .bubble .msg-text.emoji-size-sm{ font-size:1.5em; }
+
   @media (max-width:480px){
     header{padding:14px 16px;}
     #messages{padding:16px;}
@@ -694,7 +702,7 @@
     const lastRow = mineRows[mineRows.length - 1];
     const key = lastRow.dataset.key;
     const seenByOther = Object.entries(presenceMap).some(([pk, val]) => {
-      return pk !== myPresenceKey && val && val.lastSeen && val.lastSeen >= key;
+      return pk !== myPresenceKey && val && val.name !== myName && val.lastSeen && val.lastSeen >= key;
     });
     if(seenByOther){
       const label = document.createElement('span');
@@ -728,6 +736,24 @@
     }
   }
 
+  const EMOJI_ONLY_RE = /^\p{Extended_Pictographic}+$/u;
+
+  function isEmojiOnly(text){
+    if(!text) return false;
+    // strip variation selectors, zero-width joiners, and whitespace before testing
+    const stripped = text.replace(/[\u200d\ufe0f\s]/g, '');
+    if(!stripped) return false;
+    return EMOJI_ONLY_RE.test(stripped);
+  }
+
+  function graphemeCount(text){
+    if(typeof Intl !== 'undefined' && Intl.Segmenter){
+      const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+      return [...seg.segment(text.trim())].length;
+    }
+    return [...text.trim()].length;
+  }
+
   function buildMessageRow(key, msg){
     const isMine = msg.name === myName;
     const row = document.createElement('div');
@@ -757,7 +783,15 @@
     meta.textContent = msg.name || 'Someone';
 
     const text = document.createElement('div');
+    text.className = 'msg-text';
     text.textContent = msg.text;
+    if(isEmojiOnly(msg.text)){
+      const count = graphemeCount(msg.text);
+      text.classList.add('emoji-only');
+      if(count <= 3) text.classList.add('emoji-size-lg');
+      else if(count <= 6) text.classList.add('emoji-size-md');
+      else text.classList.add('emoji-size-sm');
+    }
 
     const time = document.createElement('span');
     time.className = 'time';
