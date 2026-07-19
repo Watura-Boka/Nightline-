@@ -30,7 +30,7 @@
     --mint:#7fd1a4;
     --lilac:#b9a3e3;
     --text:#f2ede4;
-    --text-dim:#4c4c54;
+    --text-dim:#8b8db3;
     --radius:18px;
   }
 
@@ -46,7 +46,7 @@
     --mint:#8fe3c0;
     --lilac:#b9a3e3;
     --text:#f3f0e8;
-    --text-dim:#4c4c54;
+    --text-dim:#8b8db3;
   }
 
   /* "meadow" — late-night hills, grass, low fireflies */
@@ -61,7 +61,7 @@
     --mint:#84bf9d;
     --lilac:#aab8d6;
     --text:#eef1e6;
-    --text-dim:#4c4c54;
+    --text-dim:#8a9690;
   }
 
   *{box-sizing:border-box;}
@@ -786,7 +786,7 @@
     onDisconnect, set, remove, get, query, orderByKey, startAfter, limitToLast
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import {
-    getAuth, setPersistence, browserSessionPersistence,
+    getAuth, setPersistence, inMemoryPersistence,
     signInWithEmailAndPassword, onAuthStateChanged, signOut
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
@@ -868,10 +868,11 @@
     enterBtnLabel.textContent = busy ? 'Checking…' : 'Enter room';
   }
 
-  // Session persistence: the auth session lives for as long as this tab/
-  // browser stays open, and is cleared automatically when it's closed —
-  // so next visit always needs the password again.
-  setPersistence(auth, browserSessionPersistence).catch(() => {});
+  // In-memory persistence only: the session lives purely in this page's JS
+  // memory and is never written to sessionStorage/localStorage. That means
+  // it's gone the instant the page is refreshed OR closed — either way,
+  // the password is required again on the very next load.
+  setPersistence(auth, inMemoryPersistence).catch(() => {});
 
   gateForm.addEventListener('submit', async e => {
     e.preventDefault();
