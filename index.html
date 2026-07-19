@@ -6,11 +6,23 @@
 <title>Nightline — Private Chat</title>
 <script>
   // Pick a theme before first paint so there's no flash of the wrong look.
-  // Runs synchronously on <html> as soon as the parser reaches it.
+  // Cycles through the themes in order on every refresh, wrapping back
+  // around to the start once it reaches the end.
   (function(){
     var THEMES = ['dusk', 'nightsky', 'meadow'];
-    var theme = THEMES[Math.floor(Math.random() * THEMES.length)];
-    document.documentElement.setAttribute('data-theme', theme);
+    var STORAGE_KEY = 'nightline-theme-index';
+
+    var idx = 0;
+    try {
+      var stored = window.localStorage.getItem(STORAGE_KEY);
+      idx = stored === null ? 0 : (parseInt(stored, 10) + 1) % THEMES.length;
+      window.localStorage.setItem(STORAGE_KEY, String(idx));
+    } catch (e) {
+      // localStorage unavailable (private browsing, etc.) — fall back to random
+      idx = Math.floor(Math.random() * THEMES.length);
+    }
+
+    document.documentElement.setAttribute('data-theme', THEMES[idx]);
   })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
