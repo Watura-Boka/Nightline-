@@ -540,11 +540,31 @@
     if(started) return;
     started = true;
 
-    // presence
-    const myPresenceRef = push(ref(db, 'presence'));
-    myPresenceKey = myPresenceRef.key;
-    set(myPresenceRef, { name: myName, lastSeen: null });
-    onDisconnect(myPresenceRef).remove();
+    // ---- presence ----
+    // Tied to the actual live socket via `.info/connected` instead of firing
+    // once on load. This is the piece that was causing duplicate "online"
+    // entries: previously we wrote the presence node and *then* armed
+    // onDisconnect, so any reconnect (tab backgrounded, brief network blip,
+    // etc.) could leave the old node behind while a new one got created,
+    // showing 2 people online for the same person. Now a fresh node is only
+    // written *after* its removal is confirmed armed on the server, and this
+    // whole block re-runs on every reconnect, so a stale node can never
+    // survive a disconnect/reconnect cycle.
+    let activePresenceRef = null;
+    onValue(ref(db, '.info/connected'), snap => {
+      if(snap.val() !== true) return;
+      const newPresenceRef = push(ref(db, 'presence'));
+      activePresenceRef = newPresenceRef;
+      onDisconnect(newPresenceRef).remove().then(() => {
+        // guard against a fast reconnect superseding this ref before the
+        // write lands
+        if(activePresenceRef !== newPresenceRef) return;
+        myPresenceKey = newPresenceRef.key;
+        set(newPresenceRef, { name: myName, lastSeen: latestMessageKey || null });
+        updateMySeen();
+      });
+    });
+
     onValue(ref(db, 'presence'), snap => {
       const val = snap.exists() ? snap.val() : {};
       presenceMap = val;
