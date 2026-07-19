@@ -387,23 +387,6 @@
   #sendBtn:focus-visible{outline:2px solid var(--lilac); outline-offset:2px;}
   #textInput:focus-visible{outline:2px solid var(--lilac); outline-offset:2px;}
 
-  .load-more-btn{
-    align-self:center;
-    margin-bottom:6px;
-    padding:8px 16px;
-    border-radius:999px;
-    border:1px solid var(--border);
-    background:var(--surface);
-    color:var(--text-dim);
-    font-size:12.5px;
-    font-family:inherit;
-    cursor:pointer;
-    transition:background .2s ease, color .2s ease, transform .15s ease;
-  }
-  .load-more-btn:hover{background:var(--surface-strong); color:var(--text); transform:translateY(-1px);}
-  .load-more-btn:disabled{opacity:0.6; cursor:default; transform:none;}
-  .load-more-btn:focus-visible{outline:2px solid var(--lilac); outline-offset:2px;}
-
   .empty-state{
     margin:auto;
     text-align:center;
@@ -465,7 +448,6 @@
   </header>
 
   <div id="messages">
-    <button id="loadMoreBtn" class="load-more-btn" type="button" style="display:none;">Load earlier messages</button>
     <div class="empty-state" id="emptyState">
       <span>It's quiet in here</span>
       Say something to get the conversation started.
@@ -494,7 +476,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getDatabase, ref, push, onChildAdded, onChildRemoved, onValue,
-    onDisconnect, set, remove, get, query, orderByKey, startAfter, endBefore, limitToLast
+    onDisconnect, set, remove, get, query, orderByKey, startAfter, limitToLast
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   const firebaseConfig = {
@@ -522,14 +504,10 @@
   const replyName = document.getElementById('replyName');
   const replyTextEl = document.getElementById('replyText');
   const replyCancel = document.getElementById('replyCancel');
-  const loadMoreBtn = document.getElementById('loadMoreBtn');
-
   let myName = '';
   let replyingTo = null; // { key, name, text }
   let myPresenceKey = null;
   let latestMessageKey = null;
-  let oldestKey = null;
-  let loadingOlder = false;
   const loadedKeys = new Set();
   let presenceMap = {};
 
@@ -578,8 +556,8 @@
     document.addEventListener('visibilitychange', updateMySeen);
     window.addEventListener('focus', updateMySeen);
 
-    // ---- initial batch: one-time read, only the most recent 30 ----
-    const initialSnap = await get(query(ref(db, 'messages'), limitToLast(30)));
+    // ---- initial batch: one-time read of the most recent 150 messages ----
+    const initialSnap = await get(query(ref(db, 'messages'), limitToLast(150)));
     const initialEntries = [];
     initialSnap.forEach(child => initialEntries.push([child.key, child.val()]));
 
@@ -591,10 +569,8 @@
 
     if(initialEntries.length){
       emptyState.remove();
-      oldestKey = initialEntries[0][0];
       latestMessageKey = initialEntries[initialEntries.length - 1][0];
     }
-    loadMoreBtn.style.display = initialEntries.length === 30 ? 'block' : 'none';
     messagesEl.scrollTop = messagesEl.scrollHeight;
     updateMySeen();
     refreshSeenLabel();
@@ -613,7 +589,6 @@
       renderMessage(snap.key, msg);
       messagesEl.scrollTop = messagesEl.scrollHeight;
       latestMessageKey = snap.key;
-      if(!oldestKey) oldestKey = snap.key;
       updateMySeen();
       refreshSeenLabel();
     });
@@ -627,8 +602,6 @@
       }
       refreshSeenLabel();
     });
-
-    loadMoreBtn.addEventListener('click', loadOlderMessages);
 
     composer.addEventListener('submit', e => {
       e.preventDefault();
@@ -651,39 +624,6 @@
       setReplyingTo(null);
       textInput.focus();
     });
-  }
-
-  async function loadOlderMessages(){
-    if(!oldestKey || loadingOlder) return;
-    loadingOlder = true;
-    loadMoreBtn.disabled = true;
-    loadMoreBtn.textContent = 'Loading…';
-
-    const olderQuery = query(ref(db, 'messages'), orderByKey(), endBefore(oldestKey), limitToLast(30));
-    const snap = await get(olderQuery);
-    const entries = [];
-    snap.forEach(child => entries.push([child.key, child.val()]));
-
-    const scrollHeightBefore = messagesEl.scrollHeight;
-    const scrollTopBefore = messagesEl.scrollTop;
-
-    entries.forEach(([key, msg]) => {
-      if(!msg || !msg.text || loadedKeys.has(key)) return;
-      loadedKeys.add(key);
-      prependMessage(key, msg);
-    });
-
-    if(entries.length){
-      oldestKey = entries[0][0];
-    }
-    loadMoreBtn.style.display = entries.length === 30 ? 'block' : 'none';
-
-    // keep the reader's place instead of jumping them to the top
-    messagesEl.scrollTop = scrollTopBefore + (messagesEl.scrollHeight - scrollHeightBefore);
-
-    loadingOlder = false;
-    loadMoreBtn.disabled = false;
-    loadMoreBtn.textContent = 'Load earlier messages';
   }
 
   function deleteMessage(key){
@@ -724,16 +664,6 @@
   function renderMessage(key, msg){
     const row = buildMessageRow(key, msg);
     messagesEl.appendChild(row);
-  }
-
-  function prependMessage(key, msg){
-    const row = buildMessageRow(key, msg);
-    const firstRow = messagesEl.querySelector('.bubble-row');
-    if(firstRow){
-      messagesEl.insertBefore(row, firstRow);
-    } else {
-      messagesEl.appendChild(row);
-    }
   }
 
   const EMOJI_ONLY_RE = /^\p{Extended_Pictographic}+$/u;
