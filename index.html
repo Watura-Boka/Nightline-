@@ -226,7 +226,7 @@
     font-size:14px;
     margin:0 0 24px;
   }
-  #nameInput{
+  #passwordInput{
     width:100%;
     padding:13px 16px;
     border-radius:12px;
@@ -237,8 +237,9 @@
     font-family:inherit;
     outline:none;
     transition:border-color .2s ease, background .2s ease;
+    letter-spacing:2px;
   }
-  #nameInput:focus{
+  #passwordInput:focus{
     border-color:var(--gold);
     background:rgba(255,255,255,0.08);
   }
@@ -258,7 +259,26 @@
   }
   #enterBtn:hover{transform:translateY(-1px); box-shadow:0 8px 20px rgba(231,185,109,0.25);}
   #enterBtn:active{transform:translateY(0);}
-  #enterBtn:focus-visible, #nameInput:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+  #enterBtn:focus-visible, #passwordInput:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+  #enterBtn:disabled{opacity:0.6; cursor:default; transform:none; box-shadow:none;}
+
+  .gate-error{
+    min-height:16px;
+    margin:10px 0 0;
+    font-size:12.5px;
+    color:#e08a7d;
+    opacity:0;
+    transition:opacity .2s ease;
+  }
+  .gate-error.visible{opacity:1;}
+  .gate-card.shake{ animation:shakeCard .4s ease; }
+  @keyframes shakeCard{
+    0%, 100%{ transform:translateX(0); }
+    20%{ transform:translateX(-8px); }
+    40%{ transform:translateX(7px); }
+    60%{ transform:translateX(-5px); }
+    80%{ transform:translateX(3px); }
+  }
 
   /* ---------- chat shell ---------- */
   #app{
@@ -557,9 +577,14 @@
 <div id="gate">
   <div class="gate-card">
     <h1>Nightline</h1>
-    <p>A quiet room for people who already know each other. Enter your name to step in.</p>
-    <input id="nameInput" type="text" placeholder="Your name" maxlength="24" autocomplete="off" />
-    <button id="enterBtn">Enter room</button>
+    <p>A quiet room for people who already know each other. Enter the password to step in.</p>
+    <form id="gateForm" autocomplete="off">
+      <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" />
+      <p id="gateError" class="gate-error"></p>
+      <button id="enterBtn" type="submit">
+        <span id="enterBtnLabel">Enter room</span>
+      </button>
+    </form>
   </div>
 </div>
 
@@ -760,6 +785,10 @@
     getDatabase, ref, push, onChildAdded, onChildRemoved, onValue,
     onDisconnect, set, remove, get, query, orderByKey, startAfter, limitToLast
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import {
+    getAuth, setPersistence, browserSessionPersistence,
+    signInWithEmailAndPassword, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyC6AvlanqU86iOQWyuR6QXXk0CdSzZFPiM",
@@ -773,10 +802,29 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+  const auth = getAuth(app);
+
+  // Password -> the Firebase account it silently signs in as, and the
+  // display name that account shows up as in chat. The user only ever
+  // sees/types the plain password on the left; everything else is
+  // handled behind the scenes.
+  const ACCOUNTS = {
+    'Howiswatura':  { email: 'methinkingcrazy@gmail.com', displayName: 'Ashriel' },
+    'Waturaisgood': { email: 'newannimsitha3@gmail.com',  displayName: 'Watura'  }
+  };
+  // Reverse lookup so a page refresh (still signed in this tab) can figure
+  // out the right display name from the restored Firebase session alone.
+  const EMAIL_TO_NAME = Object.fromEntries(
+    Object.values(ACCOUNTS).map(a => [a.email, a.displayName])
+  );
 
   const gate = document.getElementById('gate');
-  const nameInput = document.getElementById('nameInput');
+  const gateCard = document.querySelector('.gate-card');
+  const gateForm = document.getElementById('gateForm');
+  const passwordInput = document.getElementById('passwordInput');
+  const gateError = document.getElementById('gateError');
   const enterBtn = document.getElementById('enterBtn');
+  const enterBtnLabel = document.getElementById('enterBtnLabel');
   const messagesEl = document.getElementById('messages');
   const emptyState = document.getElementById('emptyState');
   const composer = document.getElementById('composer');
@@ -806,16 +854,64 @@
   }
   replyCancel.addEventListener('click', () => setReplyingTo(null));
 
-  function enterRoom(name){
-    myName = name.trim();
-    if(!myName) return;
-    gate.classList.add('hidden');
-    startChat();
+  function showGateError(message){
+    gateError.textContent = message;
+    gateError.classList.add('visible');
+    gateCard.classList.remove('shake');
+    void gateCard.offsetWidth; // restart animation
+    gateCard.classList.add('shake');
   }
 
-  nameInput.addEventListener('keydown', e => { if(e.key === 'Enter') enterRoom(nameInput.value); });
-  enterBtn.addEventListener('click', () => enterRoom(nameInput.value));
-  nameInput.focus();
+  function setGateBusy(busy){
+    enterBtn.disabled = busy;
+    passwordInput.disabled = busy;
+    enterBtnLabel.textContent = busy ? 'Checking…' : 'Enter room';
+  }
+
+  // Session persistence: the auth session lives for as long as this tab/
+  // browser stays open, and is cleared automatically when it's closed —
+  // so next visit always needs the password again.
+  setPersistence(auth, browserSessionPersistence).catch(() => {});
+
+  gateForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const entered = passwordInput.value;
+    const account = ACCOUNTS[entered];
+    if(!account){
+      showGateError('That password isn\u2019t recognized.');
+      return;
+    }
+    setGateBusy(true);
+    gateError.classList.remove('visible');
+    try {
+      await signInWithEmailAndPassword(auth, account.email, entered);
+      // onAuthStateChanged (below) takes it from here: sets myName and
+      // opens the chat once Firebase confirms the session.
+    } catch (err) {
+      setGateBusy(false);
+      showGateError('That password isn\u2019t recognized.');
+    }
+  });
+  passwordInput.focus();
+
+  // Fires on initial sign-in AND automatically if a session from earlier
+  // in this same tab is restored on refresh — either way it's the single
+  // place that opens the chat.
+  onAuthStateChanged(auth, user => {
+    if(!user){
+      return;
+    }
+    const displayName = EMAIL_TO_NAME[user.email];
+    if(!displayName){
+      // Some other/unexpected account got signed in somehow — don't let it
+      // into the room.
+      signOut(auth);
+      return;
+    }
+    myName = displayName;
+    gate.classList.add('hidden');
+    startChat();
+  });
 
   let started = false;
   async function startChat(){
@@ -823,26 +919,19 @@
     started = true;
 
     // ---- presence ----
-    // Tied to the actual live socket via `.info/connected` instead of firing
-    // once on load. This is the piece that was causing duplicate "online"
-    // entries: previously we wrote the presence node and *then* armed
-    // onDisconnect, so any reconnect (tab backgrounded, brief network blip,
-    // etc.) could leave the old node behind while a new one got created,
-    // showing 2 people online for the same person. Now a fresh node is only
-    // written *after* its removal is confirmed armed on the server, and this
-    // whole block re-runs on every reconnect, so a stale node can never
-    // survive a disconnect/reconnect cycle.
-    let activePresenceRef = null;
+    // Keyed by the authenticated user's Firebase UID rather than a random
+    // per-tab id. Since each of the two people has one fixed account, a
+    // reconnect (tab backgrounded, brief network blip, phone sleeping,
+    // etc.) always re-arms onDisconnect and rewrites that SAME uid node —
+    // so a duplicate "online" entry for the same person can't exist, and
+    // refreshing the page doesn't spawn a second one either.
+    myPresenceKey = auth.currentUser.uid;
+    const myPresenceRef = ref(db, `presence/${myPresenceKey}`);
+
     onValue(ref(db, '.info/connected'), snap => {
       if(snap.val() !== true) return;
-      const newPresenceRef = push(ref(db, 'presence'));
-      activePresenceRef = newPresenceRef;
-      onDisconnect(newPresenceRef).remove().then(() => {
-        // guard against a fast reconnect superseding this ref before the
-        // write lands
-        if(activePresenceRef !== newPresenceRef) return;
-        myPresenceKey = newPresenceRef.key;
-        set(newPresenceRef, { name: myName, lastSeen: latestMessageKey || null });
+      onDisconnect(myPresenceRef).remove().then(() => {
+        set(myPresenceRef, { name: myName, lastSeen: latestMessageKey || null });
         updateMySeen();
       });
     });
