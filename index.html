@@ -317,10 +317,19 @@
     margin:0;
   }
   .presence{
-    display:flex; align-items:center; gap:6px;
+    display:flex; flex-direction:column; align-items:flex-end; gap:2px;
     font-size:12.5px;
     color:var(--text-dim);
   }
+  .presence-row{
+    display:flex; align-items:center; gap:6px;
+  }
+  .presence-sub{
+    font-size:11px;
+    opacity:0;
+    transition:opacity .2s ease;
+  }
+  .presence-sub.visible{opacity:0.85;}
   .dot{
     width:7px; height:7px; border-radius:50%;
     background:var(--mint);
@@ -331,6 +340,39 @@
     0%,100%{opacity:1; transform:scale(1);}
     50%{opacity:0.55; transform:scale(0.8);}
   }
+
+  /* ---------- pinned message banner ---------- */
+  #pinnedBanner{
+    display:none;
+    align-items:center;
+    gap:10px;
+    padding:10px 20px;
+    border-bottom:1px solid var(--border);
+    background:rgba(255,255,255,0.03);
+    animation:riseIn .25s ease;
+  }
+  #pinnedBanner.visible{display:flex;}
+  #pinnedBanner .pin-icon{flex-shrink:0; font-size:16px;}
+  #pinnedBanner .pin-content{min-width:0; flex:1; cursor:pointer;}
+  #pinnedBanner .pin-name{font-weight:600; font-size:11.5px; color:var(--gold); margin-bottom:1px;}
+  #pinnedBanner .pin-text{
+    font-size:13px;
+    color:var(--text);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  #pinnedBanner .unpin-btn{
+    background:none;
+    border:none;
+    color:var(--text-dim);
+    cursor:pointer;
+    flex-shrink:0;
+    font-size:13px;
+    padding:4px;
+    transition:color .15s ease;
+  }
+  #pinnedBanner .unpin-btn:hover{color:#e08a7d;}
 
   #messages{
     flex:1;
@@ -344,19 +386,43 @@
   #messages::-webkit-scrollbar{width:6px;}
   #messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12); border-radius:6px;}
 
+  /* ---------- date separators ---------- */
+  .date-sep{
+    align-self:center;
+    margin:6px 0;
+    padding:4px 14px;
+    border-radius:999px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    font-size:11.5px;
+    color:var(--text-dim);
+    animation:pop .3s ease;
+  }
+
   .bubble-row{
     display:flex;
-    animation:pop .28s cubic-bezier(.2,.8,.2,1);
+    animation:pop .5s cubic-bezier(.34,1.56,.64,1);
   }
   @keyframes pop{
-    from{opacity:0; transform:translateY(8px) scale(0.97);}
-    to{opacity:1; transform:translateY(0) scale(1);}
+    0%{opacity:0; transform:translateY(16px) scale(0.94);}
+    55%{opacity:1; transform:translateY(-4px) scale(1.02);}
+    80%{opacity:1; transform:translateY(1px) scale(0.995);}
+    100%{opacity:1; transform:translateY(0) scale(1);}
   }
   .bubble-row.mine{justify-content:flex-end;}
   .bubble-row.theirs{justify-content:flex-start;}
 
-  .bubble{
+  .bubble-col{
+    display:flex;
+    flex-direction:column;
     max-width:75%;
+    position:relative;
+  }
+  .bubble-row.mine .bubble-col{align-items:flex-end;}
+  .bubble-row.theirs .bubble-col{align-items:flex-start;}
+
+  .bubble{
+    max-width:100%;
     padding:10px 14px;
     border-radius:var(--radius);
     font-size:14.5px;
@@ -377,6 +443,10 @@
     margin-top:4px;
     opacity:0.55;
     text-align:right;
+  }
+  .edited-badge{
+    font-style:italic;
+    margin-right:3px;
   }
   .seen-label{
     display:block;
@@ -439,12 +509,100 @@
     100%{box-shadow:0 4px 14px rgba(0,0,0,0.25);}
   }
 
+  /* ---------- reactions ---------- */
+  .reactions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px;
+    margin-top:4px;
+  }
+  .mine .reactions{justify-content:flex-end;}
+  .theirs .reactions{justify-content:flex-start;}
+  .reaction-pill{
+    display:flex;
+    align-items:center;
+    gap:3px;
+    padding:2px 8px;
+    border-radius:999px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-size:12px;
+    cursor:pointer;
+    user-select:none;
+    transition:transform .1s ease, background .15s ease, border-color .15s ease;
+  }
+  .reaction-pill:hover{transform:translateY(-1px);}
+  .reaction-pill.active{
+    background:var(--surface-strong);
+    border-color:var(--mint);
+  }
+
+  .reaction-picker{
+    display:flex;
+    gap:6px;
+    margin-top:4px;
+    padding:6px 8px;
+    border-radius:12px;
+    background:var(--surface-strong);
+    border:1px solid var(--border);
+    box-shadow:0 8px 20px rgba(0,0,0,0.3);
+    animation:riseIn .15s ease;
+  }
+  .reaction-picker button{
+    background:none;
+    border:none;
+    font-size:18px;
+    line-height:1;
+    padding:2px;
+    cursor:pointer;
+    transition:transform .1s ease;
+  }
+  .reaction-picker button:hover{transform:scale(1.25);}
+
+  /* ---------- inline edit mode ---------- */
+  .edit-area{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    width:100%;
+  }
+  .edit-input{
+    width:100%;
+    min-width:180px;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,0.12);
+    color:inherit;
+    font:inherit;
+    font-size:14px;
+    resize:none;
+    outline:none;
+  }
+  .edit-actions{
+    display:flex;
+    gap:8px;
+    justify-content:flex-end;
+  }
+  .edit-actions button{
+    background:none;
+    border:none;
+    cursor:pointer;
+    color:inherit;
+    opacity:0.8;
+    font-size:14px;
+    padding:2px 6px;
+  }
+  .edit-actions button:hover{opacity:1;}
+
   /* ---------- action icons under each bubble ---------- */
   .actions{
     display:flex;
     gap:10px;
     margin-top:3px;
     padding:0 2px;
+    align-self:flex-end;
   }
   .mine .actions{justify-content:flex-end;}
   .theirs .actions{justify-content:flex-start;}
@@ -457,11 +615,31 @@
     cursor:pointer;
     display:flex;
     align-items:center;
+    font-size:13px;
+    line-height:1;
     transition:opacity .15s ease, color .15s ease, transform .15s ease;
   }
   .action-btn:hover{opacity:1; color:var(--mint); transform:translateY(-1px);}
   .action-btn.delete-btn:hover{color:#e08a7d;}
   .action-btn:focus-visible{outline:2px solid var(--mint); outline-offset:2px; opacity:1;}
+
+  /* ---------- typing indicator ---------- */
+  #typingIndicator{
+    padding:0 20px;
+    margin:0 20px;
+    font-size:12.5px;
+    color:var(--text-dim);
+    font-style:italic;
+    max-height:0;
+    overflow:hidden;
+    opacity:0;
+    transition:opacity .2s ease, max-height .2s ease, padding .2s ease;
+  }
+  #typingIndicator.visible{
+    opacity:1;
+    max-height:26px;
+    padding:6px 20px;
+  }
 
   /* ---------- reply bar above composer ---------- */
   #replyBar{
@@ -605,8 +783,20 @@
     <div class="title">
       <h1>Nightline</h1>
     </div>
-    <div class="presence"><span class="dot"></span><span id="presenceCount">connecting…</span></div>
+    <div class="presence">
+      <div class="presence-row"><span class="dot"></span><span id="presenceCount">connecting…</span></div>
+      <div class="presence-sub" id="lastSeenText"></div>
+    </div>
   </header>
+
+  <div id="pinnedBanner">
+    <span class="pin-icon">📌</span>
+    <div class="pin-content" id="pinnedContent">
+      <div class="pin-name" id="pinnedName"></div>
+      <div class="pin-text" id="pinnedText"></div>
+    </div>
+    <button class="unpin-btn" id="pinnedUnpin" type="button" aria-label="Unpin message">✕</button>
+  </div>
 
   <div id="messages">
     <div class="empty-state" id="emptyState">
@@ -614,6 +804,8 @@
       Say something to get the conversation started.
     </div>
   </div>
+
+  <div id="typingIndicator"></div>
 
   <div id="replyBar">
     <div class="reply-info">
@@ -794,8 +986,9 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
-    getDatabase, ref, push, onChildAdded, onChildRemoved, onValue,
-    onDisconnect, set, remove, get, query, orderByKey, startAfter, limitToLast
+    getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, onValue,
+    onDisconnect, set, update, remove, get, query, orderByKey, startAfter, limitToLast,
+    serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
   import {
     getAuth, setPersistence, inMemoryPersistence,
@@ -829,6 +1022,8 @@
   const EMAIL_TO_NAME = Object.fromEntries(
     Object.values(ACCOUNTS).map(a => [a.email, a.displayName])
   );
+  const ALL_NAMES = Object.values(ACCOUNTS).map(a => a.displayName);
+  const REACTIONS = ['❤️', '😂', '😭', '😎', '🫠'];
 
   const gate = document.getElementById('gate');
   const gateCard = document.querySelector('.gate-card');
@@ -842,16 +1037,53 @@
   const composer = document.getElementById('composer');
   const textInput = document.getElementById('textInput');
   const presenceCount = document.getElementById('presenceCount');
+  const lastSeenTextEl = document.getElementById('lastSeenText');
+  const typingIndicatorEl = document.getElementById('typingIndicator');
   const replyBar = document.getElementById('replyBar');
   const replyName = document.getElementById('replyName');
   const replyTextEl = document.getElementById('replyText');
   const replyCancel = document.getElementById('replyCancel');
+  const pinnedBanner = document.getElementById('pinnedBanner');
+  const pinnedContent = document.getElementById('pinnedContent');
+  const pinnedNameEl = document.getElementById('pinnedName');
+  const pinnedTextEl = document.getElementById('pinnedText');
+  const pinnedUnpinBtn = document.getElementById('pinnedUnpin');
+
   let myName = '';
   let replyingTo = null; // { key, name, text }
   let myPresenceKey = null;
   let latestMessageKey = null;
   const loadedKeys = new Set();
   let presenceMap = {};
+  let otherLastOnline = null;
+  let lastDateKey = null;
+
+  function getOtherName(){
+    return ALL_NAMES.find(n => n !== myName);
+  }
+
+  function refreshLastSeenText(){
+    if(!myName) return;
+    const otherName = getOtherName();
+    if(!otherName) return;
+    const otherOnline = Object.values(presenceMap).some(p => p && p.name === otherName);
+    if(otherOnline || !otherLastOnline){
+      lastSeenTextEl.classList.remove('visible');
+      return;
+    }
+    const mins = Math.max(0, Math.floor((Date.now() - otherLastOnline) / 60000));
+    let text;
+    if(mins < 1) text = 'Last seen just now';
+    else if(mins === 1) text = 'Last seen 1 minute ago';
+    else if(mins < 60) text = `Last seen ${mins} minutes ago`;
+    else {
+      const hrs = Math.floor(mins / 60);
+      text = hrs === 1 ? 'Last seen 1 hour ago' : `Last seen ${hrs} hours ago`;
+    }
+    lastSeenTextEl.textContent = text;
+    lastSeenTextEl.classList.add('visible');
+  }
+  setInterval(refreshLastSeenText, 30000);
 
   function setReplyingTo(entry){
     replyingTo = entry;
@@ -931,6 +1163,58 @@
     if(started) return;
     started = true;
 
+    const otherName = getOtherName();
+
+    // ---- typing indicator ----
+    const typingRef = ref(db, `typing/${myName}`);
+    let typingTimeout = null;
+    textInput.addEventListener('input', () => {
+      if(!typingTimeout){
+        set(typingRef, true);
+      } else {
+        clearTimeout(typingTimeout);
+      }
+      typingTimeout = setTimeout(() => {
+        remove(typingRef);
+        typingTimeout = null;
+      }, 2000);
+    });
+    onValue(ref(db, 'typing'), snap => {
+      const val = snap.exists() ? snap.val() : {};
+      if(val && val[otherName]){
+        typingIndicatorEl.textContent = `${otherName} is typing…`;
+        typingIndicatorEl.classList.add('visible');
+      } else {
+        typingIndicatorEl.classList.remove('visible');
+      }
+    });
+
+    // ---- last seen (for when the other person is offline) ----
+    onValue(ref(db, `lastOnline/${otherName}`), snap => {
+      otherLastOnline = snap.exists() ? snap.val() : null;
+      refreshLastSeenText();
+    });
+
+    // ---- pinned message banner ----
+    onValue(ref(db, 'pinned'), snap => {
+      const pinned = snap.exists() ? snap.val() : null;
+      if(!pinned){
+        pinnedBanner.classList.remove('visible');
+        pinnedBanner.dataset.key = '';
+        return;
+      }
+      pinnedBanner.dataset.key = pinned.key;
+      pinnedNameEl.textContent = pinned.name;
+      pinnedTextEl.textContent = pinned.text;
+      pinnedBanner.classList.add('visible');
+    });
+    pinnedContent.addEventListener('click', () => {
+      if(pinnedBanner.dataset.key) jumpToMessage(pinnedBanner.dataset.key);
+    });
+    pinnedUnpinBtn.addEventListener('click', () => {
+      remove(ref(db, 'pinned'));
+    });
+
     // ---- presence ----
     // Keyed by the authenticated user's Firebase UID rather than a random
     // per-tab id. Since each of the two people has one fixed account, a
@@ -944,6 +1228,8 @@
     onValue(ref(db, '.info/connected'), snap => {
       if(snap.val() !== true) return;
       onDisconnect(myPresenceRef).remove().then(() => {
+        onDisconnect(ref(db, `lastOnline/${myName}`)).set(serverTimestamp());
+        onDisconnect(typingRef).remove();
         set(myPresenceRef, { name: myName, lastSeen: latestMessageKey || null });
         updateMySeen();
       });
@@ -955,6 +1241,7 @@
       const count = Object.keys(val).length;
       presenceCount.textContent = count === 1 ? '1 person online' : `${count} people online`;
       refreshSeenLabel();
+      refreshLastSeenText();
     });
 
     document.addEventListener('visibilitychange', updateMySeen);
@@ -997,6 +1284,17 @@
       refreshSeenLabel();
     });
 
+    onChildChanged(ref(db, 'messages'), snap => {
+      const msg = snap.val();
+      if(!msg || !msg.text) return;
+      if(!loadedKeys.has(snap.key)){
+        loadedKeys.add(snap.key);
+        renderMessage(snap.key, msg);
+        return;
+      }
+      replaceMessageRow(snap.key, msg);
+    });
+
     onChildRemoved(ref(db, 'messages'), snap => {
       loadedKeys.delete(snap.key);
       const row = messagesEl.querySelector(`[data-key="${snap.key}"]`);
@@ -1026,6 +1324,11 @@
       push(ref(db, 'messages'), payload);
       textInput.value = '';
       setReplyingTo(null);
+      if(typingTimeout){
+        clearTimeout(typingTimeout);
+        typingTimeout = null;
+      }
+      remove(typingRef);
       textInput.focus();
     });
   }
@@ -1065,9 +1368,165 @@
     row.classList.add('flash');
   }
 
+  // ---- date separators (computed client-side, never stored in Firebase) ----
+  function formatDateLabel(d){
+    const today = new Date();
+    const yest = new Date();
+    yest.setDate(today.getDate() - 1);
+    const same = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    if(same(d, today)) return 'Today';
+    if(same(d, yest)) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  function maybeInsertDateSeparator(ts){
+    const d = ts ? new Date(ts) : new Date();
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if(key === lastDateKey) return;
+    lastDateKey = key;
+    const sep = document.createElement('div');
+    sep.className = 'date-sep';
+    sep.textContent = formatDateLabel(d);
+    messagesEl.appendChild(sep);
+  }
+
   function renderMessage(key, msg){
+    maybeInsertDateSeparator(msg.ts);
     const row = buildMessageRow(key, msg);
     messagesEl.appendChild(row);
+  }
+
+  function replaceMessageRow(key, msg){
+    const old = messagesEl.querySelector(`[data-key="${key}"]`);
+    if(!old) return;
+    const row = buildMessageRow(key, msg, { skipAnim: true });
+    old.replaceWith(row);
+    refreshSeenLabel();
+  }
+
+  // ---- reactions ----
+  function toggleReaction(key, emoji){
+    const reactionRef = ref(db, `messages/${key}/reactions/${emoji}/${myName}`);
+    get(reactionRef).then(snap => {
+      if(snap.exists()) remove(reactionRef);
+      else set(reactionRef, true);
+    });
+  }
+
+  function buildReactionsWrap(key, msg){
+    const reactions = msg.reactions || {};
+    const wrap = document.createElement('div');
+    wrap.className = 'reactions';
+    let any = false;
+    REACTIONS.forEach(emoji => {
+      const users = reactions[emoji];
+      const names = users ? Object.keys(users) : [];
+      if(!names.length) return;
+      any = true;
+      const pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = 'reaction-pill' + (names.includes(myName) ? ' active' : '');
+      pill.textContent = `${emoji} ${names.length}`;
+      pill.addEventListener('click', () => toggleReaction(key, emoji));
+      wrap.appendChild(pill);
+    });
+    return any ? wrap : null;
+  }
+
+  function closeAnyOpenPicker(){
+    document.querySelectorAll('.reaction-picker').forEach(p => p.remove());
+  }
+
+  function toggleReactionPicker(row, key){
+    const existing = row.querySelector('.reaction-picker');
+    if(existing){
+      existing.remove();
+      return;
+    }
+    closeAnyOpenPicker();
+    const bubbleCol = row.querySelector('.bubble-col');
+    const picker = document.createElement('div');
+    picker.className = 'reaction-picker';
+    REACTIONS.forEach(emoji => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = emoji;
+      btn.addEventListener('click', () => {
+        toggleReaction(key, emoji);
+        picker.remove();
+      });
+      picker.appendChild(btn);
+    });
+    bubbleCol.appendChild(picker);
+  }
+
+  // ---- pin / unpin ----
+  function togglePin(key, msg){
+    get(ref(db, 'pinned')).then(snap => {
+      const current = snap.exists() ? snap.val() : null;
+      if(current && current.key === key){
+        remove(ref(db, 'pinned'));
+      } else {
+        set(ref(db, 'pinned'), { key, name: msg.name, text: msg.text });
+      }
+    });
+  }
+
+  // ---- inline edit mode ----
+  function enterEditMode(row, key, msg){
+    const bubble = row.querySelector('.bubble');
+    const textEl = bubble.querySelector('.msg-text');
+    if(!textEl) return;
+    const original = msg.text;
+
+    const editWrap = document.createElement('div');
+    editWrap.className = 'edit-area';
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'edit-input';
+    textarea.value = original;
+    textarea.rows = Math.min(6, Math.max(1, Math.ceil(original.length / 40)));
+
+    const btnRow = document.createElement('div');
+    btnRow.className = 'edit-actions';
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.textContent = '✓ Save';
+    saveBtn.setAttribute('aria-label', 'Save edit');
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.textContent = '✕ Cancel';
+    cancelBtn.setAttribute('aria-label', 'Cancel edit');
+    btnRow.appendChild(saveBtn);
+    btnRow.appendChild(cancelBtn);
+
+    editWrap.appendChild(textarea);
+    editWrap.appendChild(btnRow);
+    textEl.replaceWith(editWrap);
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    function finishEdit(save){
+      if(save){
+        const newText = textarea.value.trim();
+        if(newText && newText !== original){
+          update(ref(db, `messages/${key}`), { text: newText, edited: true });
+          return; // onChildChanged will rebuild the row with the new content
+        }
+      }
+      editWrap.replaceWith(textEl);
+    }
+
+    saveBtn.addEventListener('click', () => finishEdit(true));
+    cancelBtn.addEventListener('click', () => finishEdit(false));
+    textarea.addEventListener('keydown', e => {
+      if(e.key === 'Enter' && !e.shiftKey){
+        e.preventDefault();
+        finishEdit(true);
+      } else if(e.key === 'Escape'){
+        finishEdit(false);
+      }
+    });
   }
 
   const EMOJI_ONLY_RE = /^\p{Extended_Pictographic}+$/u;
@@ -1088,11 +1547,16 @@
     return [...text.trim()].length;
   }
 
-  function buildMessageRow(key, msg){
+  function buildMessageRow(key, msg, opts){
+    opts = opts || {};
     const isMine = msg.name === myName;
     const row = document.createElement('div');
     row.className = 'bubble-row ' + (isMine ? 'mine' : 'theirs');
     row.dataset.key = key;
+    if(opts.skipAnim) row.style.animation = 'none';
+
+    const bubbleCol = document.createElement('div');
+    bubbleCol.className = 'bubble-col';
 
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
@@ -1130,12 +1594,23 @@
     const time = document.createElement('span');
     time.className = 'time';
     const d = msg.ts ? new Date(msg.ts) : new Date();
-    time.textContent = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    if(msg.edited){
+      const editedBadge = document.createElement('span');
+      editedBadge.className = 'edited-badge';
+      editedBadge.textContent = '(Edited) ';
+      time.appendChild(editedBadge);
+    }
+    time.appendChild(document.createTextNode(d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})));
 
     bubble.appendChild(meta);
     bubble.appendChild(text);
     bubble.appendChild(time);
-    row.appendChild(bubble);
+    bubbleCol.appendChild(bubble);
+
+    const reactionsWrap = buildReactionsWrap(key, msg);
+    if(reactionsWrap) bubbleCol.appendChild(reactionsWrap);
+
+    row.appendChild(bubbleCol);
 
     const actions = document.createElement('div');
     actions.className = 'actions';
@@ -1148,7 +1623,31 @@
     replyBtn.addEventListener('click', () => setReplyingTo({ key, name: msg.name, text: msg.text }));
     actions.appendChild(replyBtn);
 
+    const reactBtn = document.createElement('button');
+    reactBtn.type = 'button';
+    reactBtn.className = 'action-btn react-btn';
+    reactBtn.setAttribute('aria-label', 'React');
+    reactBtn.textContent = '😊';
+    reactBtn.addEventListener('click', () => toggleReactionPicker(row, key));
+    actions.appendChild(reactBtn);
+
+    const pinBtn = document.createElement('button');
+    pinBtn.type = 'button';
+    pinBtn.className = 'action-btn pin-btn';
+    pinBtn.setAttribute('aria-label', 'Pin message');
+    pinBtn.textContent = '📌';
+    pinBtn.addEventListener('click', () => togglePin(key, msg));
+    actions.appendChild(pinBtn);
+
     if(isMine){
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'action-btn edit-btn';
+      editBtn.setAttribute('aria-label', 'Edit message');
+      editBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      editBtn.addEventListener('click', () => enterEditMode(row, key, msg));
+      actions.appendChild(editBtn);
+
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
       delBtn.className = 'action-btn delete-btn';
