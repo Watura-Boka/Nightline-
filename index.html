@@ -9,7 +9,7 @@
   // Cycles through the themes in order on every refresh, wrapping back
   // around to the start once it reaches the end.
   (function(){
-    var THEMES = ['dusk', 'nightsky', 'meadow'];
+    var THEMES = ['dusk', 'nightsky', 'meadow', 'aurora'];
     var STORAGE_KEY = 'nightline-theme-index';
 
     var idx = 0;
@@ -76,6 +76,21 @@
     --text-dim:#4b4c57;
   }
 
+  /* "aurora" — polar night sky with drifting northern lights */
+  html[data-theme="aurora"]{
+    --bg-1:#050b12;
+    --bg-2:#0a1f2b;
+    --bg-3:#122a3a;
+    --surface:rgba(255,255,255,0.055);
+    --surface-strong:rgba(255,255,255,0.095);
+    --border:rgba(255,255,255,0.12);
+    --gold:#e7c56d;
+    --mint:#6fe3b4;
+    --lilac:#9fb4e3;
+    --text:#eef4f0;
+    --text-dim:#4b4c57;
+  }
+
   *{box-sizing:border-box;}
   html,body{height:100%;}
   body{
@@ -106,6 +121,12 @@
       radial-gradient(340px 300px at 14% 10%, rgba(227,181,106,0.14), transparent 65%),
       radial-gradient(700px 420px at 90% 0%, rgba(170,184,214,0.08), transparent 60%),
       linear-gradient(180deg, var(--bg-1) 0%, #0a1a20 45%, var(--bg-2) 78%, var(--bg-3) 100%);
+  }
+  html[data-theme="aurora"] body{
+    background:
+      radial-gradient(700px 420px at 20% 0%, rgba(111,227,180,0.10), transparent 60%),
+      radial-gradient(800px 500px at 85% 100%, rgba(159,180,227,0.08), transparent 55%),
+      linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 55%, var(--bg-3) 100%);
   }
 
   /* ================= SCENERY (theme-specific decoration) ================= */
@@ -167,6 +188,21 @@
     animation:drift 14s ease-in-out infinite;
   }
 
+  /* --- aurora bits --- */
+  .aurora-band{
+    position:absolute;
+    left:-10%;
+    width:120%;
+    filter:blur(18px);
+    mix-blend-mode:screen;
+    opacity:0.5;
+    animation:auroraSway 13s ease-in-out infinite;
+  }
+  @keyframes auroraSway{
+    0%, 100%{ transform:translateX(0) translateY(0) scaleY(1); opacity:0.35; }
+    50%{ transform:translateX(3%) translateY(-6px) scaleY(1.06); opacity:0.6; }
+  }
+
   /* ---------- shared ambient fireflies (all themes) ---------- */
   .fireflies{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
   html[data-theme="meadow"] .fireflies{ transform:translateY(10%); }
@@ -200,6 +236,7 @@
     .firefly, .meadow-firefly{animation:none; opacity:0.3;}
     .star{animation:none; opacity:var(--max-o);}
     .shooting-star{display:none;}
+    .aurora-band{animation:none; opacity:0.35;}
   }
 
   /* ---------- name gate ---------- */
@@ -340,39 +377,6 @@
     0%,100%{opacity:1; transform:scale(1);}
     50%{opacity:0.55; transform:scale(0.8);}
   }
-
-  /* ---------- pinned message banner ---------- */
-  #pinnedBanner{
-    display:none;
-    align-items:center;
-    gap:10px;
-    padding:10px 20px;
-    border-bottom:1px solid var(--border);
-    background:rgba(255,255,255,0.03);
-    animation:riseIn .25s ease;
-  }
-  #pinnedBanner.visible{display:flex;}
-  #pinnedBanner .pin-icon{flex-shrink:0; font-size:16px;}
-  #pinnedBanner .pin-content{min-width:0; flex:1; cursor:pointer;}
-  #pinnedBanner .pin-name{font-weight:600; font-size:11.5px; color:var(--gold); margin-bottom:1px;}
-  #pinnedBanner .pin-text{
-    font-size:13px;
-    color:var(--text);
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  #pinnedBanner .unpin-btn{
-    background:none;
-    border:none;
-    color:var(--text-dim);
-    cursor:pointer;
-    flex-shrink:0;
-    font-size:13px;
-    padding:4px;
-    transition:color .15s ease;
-  }
-  #pinnedBanner .unpin-btn:hover{color:#e08a7d;}
 
   #messages{
     flex:1;
@@ -596,22 +600,45 @@
   }
   .edit-actions button:hover{opacity:1;}
 
-  /* ---------- action icons under each bubble ---------- */
-  .actions{
+  /* ---------- three-dot trigger + hidden actions menu ---------- */
+  .menu-trigger{
+    background:none;
+    border:none;
+    padding:4px 6px;
+    margin-top:2px;
+    color:var(--text-dim);
+    opacity:0.5;
+    cursor:pointer;
     display:flex;
-    gap:10px;
-    margin-top:3px;
-    padding:0 2px;
+    align-items:center;
+    border-radius:8px;
     align-self:flex-end;
+    transition:opacity .15s ease, background .15s ease, transform .15s ease;
   }
-  .mine .actions{justify-content:flex-end;}
-  .theirs .actions{justify-content:flex-start;}
+  .theirs .menu-trigger{align-self:flex-start;}
+  .menu-trigger:hover{opacity:1; background:var(--surface);}
+  .menu-trigger:focus-visible{outline:2px solid var(--mint); outline-offset:2px; opacity:1;}
+
+  .actions{
+    display:none;
+    gap:10px;
+    margin-top:4px;
+    padding:6px 10px;
+    border-radius:12px;
+    background:var(--surface-strong);
+    border:1px solid var(--border);
+    box-shadow:0 8px 20px rgba(0,0,0,0.3);
+    animation:riseIn .15s ease;
+  }
+  .actions.open{display:flex;}
+  .mine .actions{align-self:flex-end;}
+  .theirs .actions{align-self:flex-start;}
   .action-btn{
     background:none;
     border:none;
     padding:2px;
     color:var(--text-dim);
-    opacity:0.5;
+    opacity:0.6;
     cursor:pointer;
     display:flex;
     align-items:center;
@@ -789,15 +816,6 @@
     </div>
   </header>
 
-  <div id="pinnedBanner">
-    <span class="pin-icon">📌</span>
-    <div class="pin-content" id="pinnedContent">
-      <div class="pin-name" id="pinnedName"></div>
-      <div class="pin-text" id="pinnedText"></div>
-    </div>
-    <button class="unpin-btn" id="pinnedUnpin" type="button" aria-label="Unpin message">✕</button>
-  </div>
-
   <div id="messages">
     <div class="empty-state" id="emptyState">
       <span>It's quiet in here</span>
@@ -840,6 +858,8 @@
       buildNightsky();
     } else if(theme === 'meadow'){
       buildMeadow();
+    } else if(theme === 'aurora'){
+      buildAurora();
     }
     // 'dusk' needs no extra scenery — the CSS gradients + shared fireflies
     // already recreate the original room.
@@ -967,6 +987,73 @@
       }
     }
 
+    function buildAurora(){
+      var starCount = window.innerWidth < 480 ? 40 : 70;
+      var accents = ['#fdfbf3', '#fdfbf3', '#6fe3b4', '#9fb4e3'];
+      for(var i = 0; i < starCount; i++){
+        var star = document.createElement('div');
+        star.className = 'star';
+        var size = (Math.random() * 1.4 + 0.6).toFixed(2);
+        var minO = (Math.random() * 0.2 + 0.15).toFixed(2);
+        var maxO = (Math.random() * 0.35 + 0.55).toFixed(2);
+        var color = accents[Math.floor(Math.random() * accents.length)];
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        star.style.top = (Math.random() * 60).toFixed(2) + '%';
+        star.style.left = (Math.random() * 100).toFixed(2) + '%';
+        star.style.background = color;
+        star.style.setProperty('--min-o', minO);
+        star.style.setProperty('--max-o', maxO);
+        if(!prefersReduced){
+          star.style.animationDuration = (Math.random() * 3 + 2.5).toFixed(2) + 's';
+          star.style.animationDelay = (Math.random() * 5).toFixed(2) + 's';
+        } else {
+          star.style.opacity = maxO;
+        }
+        field.appendChild(star);
+      }
+
+      var bands = [
+        { top:'4%',  h:130, colors:['rgba(111,227,180,0)', 'rgba(111,227,180,0.55)', 'rgba(159,180,227,0.35)', 'rgba(111,227,180,0)'], delay:'0s',  dur:'13s' },
+        { top:'15%', h:110, colors:['rgba(159,180,227,0)', 'rgba(159,180,227,0.4)',  'rgba(231,197,109,0.25)', 'rgba(159,180,227,0)'], delay:'3s',  dur:'16s' },
+        { top:'24%', h:95,  colors:['rgba(111,227,180,0)', 'rgba(231,197,109,0.3)',  'rgba(111,227,180,0.4)',  'rgba(111,227,180,0)'], delay:'6s',  dur:'14s' }
+      ];
+      bands.forEach(function(b, idx){
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'aurora-band');
+        svg.setAttribute('viewBox', '0 0 400 100');
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.style.top = b.top;
+        svg.style.height = b.h + 'px';
+        if(!prefersReduced){
+          svg.style.animationDuration = b.dur;
+          svg.style.animationDelay = b.delay;
+        } else {
+          svg.style.animation = 'none';
+          svg.style.opacity = '0.35';
+        }
+        var gradId = 'auroraGrad' + idx;
+        var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        var grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        grad.setAttribute('id', gradId);
+        grad.setAttribute('x1', '0'); grad.setAttribute('y1', '0');
+        grad.setAttribute('x2', '1'); grad.setAttribute('y2', '0');
+        b.colors.forEach(function(c, ci){
+          var stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+          stop.setAttribute('offset', (ci / (b.colors.length - 1) * 100) + '%');
+          stop.setAttribute('stop-color', c);
+          grad.appendChild(stop);
+        });
+        defs.appendChild(grad);
+        svg.appendChild(defs);
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M0,50 C60,10 120,90 200,50 C280,10 340,90 400,50 L400,100 L0,100 Z');
+        path.setAttribute('fill', 'url(#' + gradId + ')');
+        svg.appendChild(path);
+        field.appendChild(svg);
+      });
+    }
+
     function svgLayer(className, fill, points){
       var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('class', className);
@@ -1043,11 +1130,6 @@
   const replyName = document.getElementById('replyName');
   const replyTextEl = document.getElementById('replyText');
   const replyCancel = document.getElementById('replyCancel');
-  const pinnedBanner = document.getElementById('pinnedBanner');
-  const pinnedContent = document.getElementById('pinnedContent');
-  const pinnedNameEl = document.getElementById('pinnedName');
-  const pinnedTextEl = document.getElementById('pinnedText');
-  const pinnedUnpinBtn = document.getElementById('pinnedUnpin');
 
   let myName = '';
   let replyingTo = null; // { key, name, text }
@@ -1166,53 +1248,48 @@
     const otherName = getOtherName();
 
     // ---- typing indicator ----
+    // Writes a server-clock-independent local timestamp (not just a boolean)
+    // so the indicator can self-expire on the READING side too. That way,
+    // if the "remove on stop typing" write is ever missed (closed tab,
+    // dropped connection, permission hiccup, etc.) the indicator still
+    // disappears on its own a couple seconds after the last keystroke
+    // instead of getting stuck forever.
     const typingRef = ref(db, `typing/${myName}`);
     let typingTimeout = null;
+    let lastTypingWrite = 0;
     textInput.addEventListener('input', () => {
-      if(!typingTimeout){
-        set(typingRef, true);
-      } else {
-        clearTimeout(typingTimeout);
+      const now = Date.now();
+      if(now - lastTypingWrite > 1200){
+        lastTypingWrite = now;
+        set(typingRef, now).catch(() => {});
       }
+      clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => {
-        remove(typingRef);
-        typingTimeout = null;
+        remove(typingRef).catch(() => {});
       }, 2000);
     });
-    onValue(ref(db, 'typing'), snap => {
-      const val = snap.exists() ? snap.val() : {};
-      if(val && val[otherName]){
+
+    let typingMap = {};
+    function refreshTypingIndicator(){
+      const ts = typingMap && typingMap[otherName];
+      const isFresh = typeof ts === 'number' && (Date.now() - ts) < 3000;
+      if(isFresh){
         typingIndicatorEl.textContent = `${otherName} is typing…`;
         typingIndicatorEl.classList.add('visible');
       } else {
         typingIndicatorEl.classList.remove('visible');
       }
+    }
+    onValue(ref(db, 'typing'), snap => {
+      typingMap = snap.exists() ? snap.val() : {};
+      refreshTypingIndicator();
     });
+    setInterval(refreshTypingIndicator, 1000);
 
     // ---- last seen (for when the other person is offline) ----
     onValue(ref(db, `lastOnline/${otherName}`), snap => {
       otherLastOnline = snap.exists() ? snap.val() : null;
       refreshLastSeenText();
-    });
-
-    // ---- pinned message banner ----
-    onValue(ref(db, 'pinned'), snap => {
-      const pinned = snap.exists() ? snap.val() : null;
-      if(!pinned){
-        pinnedBanner.classList.remove('visible');
-        pinnedBanner.dataset.key = '';
-        return;
-      }
-      pinnedBanner.dataset.key = pinned.key;
-      pinnedNameEl.textContent = pinned.name;
-      pinnedTextEl.textContent = pinned.text;
-      pinnedBanner.classList.add('visible');
-    });
-    pinnedContent.addEventListener('click', () => {
-      if(pinnedBanner.dataset.key) jumpToMessage(pinnedBanner.dataset.key);
-    });
-    pinnedUnpinBtn.addEventListener('click', () => {
-      remove(ref(db, 'pinned'));
     });
 
     // ---- presence ----
@@ -1437,6 +1514,44 @@
     document.querySelectorAll('.reaction-picker').forEach(p => p.remove());
   }
 
+  // ---- three-dot / long-press actions menu ----
+  function closeAllActionMenus(){
+    document.querySelectorAll('.actions.open').forEach(m => m.classList.remove('open'));
+  }
+  function toggleActionsMenu(row){
+    const menu = row.querySelector('.actions');
+    const isOpen = menu.classList.contains('open');
+    closeAllActionMenus();
+    closeAnyOpenPicker();
+    if(!isOpen) menu.classList.add('open');
+  }
+  function openActionsMenu(row){
+    closeAllActionMenus();
+    closeAnyOpenPicker();
+    row.querySelector('.actions').classList.add('open');
+  }
+  document.addEventListener('click', e => {
+    if(e.target.closest('.actions') || e.target.closest('.menu-trigger')) return;
+    closeAllActionMenus();
+  });
+
+  function attachLongPress(el, callback){
+    let timer = null;
+    let moved = false;
+    const start = () => {
+      moved = false;
+      timer = setTimeout(() => { if(!moved) callback(); }, 450);
+    };
+    const cancel = () => clearTimeout(timer);
+    const move = () => { moved = true; clearTimeout(timer); };
+    el.addEventListener('touchstart', start, { passive: true });
+    el.addEventListener('touchend', cancel);
+    el.addEventListener('touchmove', move);
+    el.addEventListener('mousedown', start);
+    el.addEventListener('mouseup', cancel);
+    el.addEventListener('mouseleave', cancel);
+  }
+
   function toggleReactionPicker(row, key){
     const existing = row.querySelector('.reaction-picker');
     if(existing){
@@ -1458,18 +1573,6 @@
       picker.appendChild(btn);
     });
     bubbleCol.appendChild(picker);
-  }
-
-  // ---- pin / unpin ----
-  function togglePin(key, msg){
-    get(ref(db, 'pinned')).then(snap => {
-      const current = snap.exists() ? snap.val() : null;
-      if(current && current.key === key){
-        remove(ref(db, 'pinned'));
-      } else {
-        set(ref(db, 'pinned'), { key, name: msg.name, text: msg.text });
-      }
-    });
   }
 
   // ---- inline edit mode ----
@@ -1610,8 +1713,8 @@
     const reactionsWrap = buildReactionsWrap(key, msg);
     if(reactionsWrap) bubbleCol.appendChild(reactionsWrap);
 
-    row.appendChild(bubbleCol);
-
+    // Hidden by default — revealed by tapping the three dots or
+    // long-pressing the bubble, instead of always sitting on screen.
     const actions = document.createElement('div');
     actions.className = 'actions';
 
@@ -1620,7 +1723,10 @@
     replyBtn.className = 'action-btn';
     replyBtn.setAttribute('aria-label', 'Reply');
     replyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 17L4 12L9 7M4 12H14C17.3137 12 20 14.6863 20 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    replyBtn.addEventListener('click', () => setReplyingTo({ key, name: msg.name, text: msg.text }));
+    replyBtn.addEventListener('click', () => {
+      setReplyingTo({ key, name: msg.name, text: msg.text });
+      closeAllActionMenus();
+    });
     actions.appendChild(replyBtn);
 
     const reactBtn = document.createElement('button');
@@ -1628,16 +1734,11 @@
     reactBtn.className = 'action-btn react-btn';
     reactBtn.setAttribute('aria-label', 'React');
     reactBtn.textContent = '😊';
-    reactBtn.addEventListener('click', () => toggleReactionPicker(row, key));
+    reactBtn.addEventListener('click', () => {
+      closeAllActionMenus();
+      toggleReactionPicker(row, key);
+    });
     actions.appendChild(reactBtn);
-
-    const pinBtn = document.createElement('button');
-    pinBtn.type = 'button';
-    pinBtn.className = 'action-btn pin-btn';
-    pinBtn.setAttribute('aria-label', 'Pin message');
-    pinBtn.textContent = '📌';
-    pinBtn.addEventListener('click', () => togglePin(key, msg));
-    actions.appendChild(pinBtn);
 
     if(isMine){
       const editBtn = document.createElement('button');
@@ -1645,7 +1746,10 @@
       editBtn.className = 'action-btn edit-btn';
       editBtn.setAttribute('aria-label', 'Edit message');
       editBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      editBtn.addEventListener('click', () => enterEditMode(row, key, msg));
+      editBtn.addEventListener('click', () => {
+        closeAllActionMenus();
+        enterEditMode(row, key, msg);
+      });
       actions.appendChild(editBtn);
 
       const delBtn = document.createElement('button');
@@ -1653,11 +1757,29 @@
       delBtn.className = 'action-btn delete-btn';
       delBtn.setAttribute('aria-label', 'Delete message');
       delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 7H20M9 7V4H15V7M6 7L7 20H17L18 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      delBtn.addEventListener('click', () => deleteMessage(key));
+      delBtn.addEventListener('click', () => {
+        closeAllActionMenus();
+        deleteMessage(key);
+      });
       actions.appendChild(delBtn);
     }
 
-    row.appendChild(actions);
+    bubbleCol.appendChild(actions);
+    row.appendChild(bubbleCol);
+
+    const triggerBtn = document.createElement('button');
+    triggerBtn.type = 'button';
+    triggerBtn.className = 'menu-trigger';
+    triggerBtn.setAttribute('aria-label', 'More actions');
+    triggerBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
+    triggerBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleActionsMenu(row);
+    });
+    row.appendChild(triggerBtn);
+
+    attachLongPress(bubble, () => openActionsMenu(row));
+
     return row;
   }
 </script>
